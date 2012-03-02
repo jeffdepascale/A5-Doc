@@ -1,14 +1,15 @@
 a5.cl.Config({
 	trapErrors:true,
 	dependencies:[
-		'/src/cl/plugins/FileAPI.js',
-		'/src/cl/plugins/Zip.js',
-		'js/helpers/FileLoader.js',
-		'js/helpers/DocProcessor.js',
-		'js/helpers/TextProcessor.js',
-		'js/helpers/LiveCodeProcessor.js',
-		'js/helpers/Generator.js',
-		'js/controllers/MainController.js'
+		'../lib/A5-CL-MVC.js',
+		//'/src/cl/plugins/FileAPI.js',
+		//'/src/cl/plugins/Zip.js',
+		'../src/js/helpers/FileLoader.js',
+		'../src/js/helpers/DocProcessor.js',
+		'../src/js/helpers/TextProcessor.js',
+		'../src/js/helpers/LiveCodeProcessor.js',
+		'../src/js/helpers/Generator.js',
+		'../src/js/controllers/MainController.js'
 	]
 })
 
