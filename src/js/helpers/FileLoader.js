@@ -10,12 +10,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		
 		self.FileLoader = function(){
 			self.superclass(this);
-			
 			_view = self.plugins().FileAPI().getInputView(im.FileAPI.MIME_JS);
 			self.plugins().FileAPI().addEventListener(im.FileAPI.FILES_CHOSEN, eFilesChosenHandler);
-			script = document.createElement('script');
-			script.type = 'text/javascript';
-			document.body.appendChild(script);
 		}
 		
 		self.view = function(){
@@ -33,7 +29,6 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var eFileReadHandler = function(fileContents){
-			script.text = fileContents;
 			fileCache.push(fileContents);
 			if(files.length)
 				readNextFile();

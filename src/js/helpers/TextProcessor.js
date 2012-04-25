@@ -6,6 +6,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		
 		var classTextObj = {},
 			trim = a5.cl.core.Utils.trim,
+			includePrivate = false,
+			errorOnInvalid = false,
 			pkgBreakers = ['a5.Package', 'Package'];
 		
 		self.TextProcessor = function(){
@@ -60,7 +62,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		
 		var processClasses = function(clsArray){
 			for(var i = 0, l = clsArray.length; i<l; i++){
-				var str = clsArray[i],
+				var isValid = true,
+					str = clsArray[i],
 					pkg = str.substring(str.indexOf('(') +2, str.indexOf(')')-1),
 					ext = null,
 					mix = null,
@@ -90,28 +93,34 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				} else if(interfaceIndex !== -1){
 					clsName = str.substring(interfaceIndex + 12, str.indexOf(',', interfaceIndex)-1);
 					type = 'Interface';
-				} else {
-					self.throwError('invalid class: \n' + str);
-					return;
+				} else if(clsArray[i].substr(0, 2) !== '//' && 
+						  clsArray[i].substr(0, 2) !== '/*'){
+							if(errorOnInvalid)
+								return self.throwError('invalid class: \n' + str);
+							else
+								isValid = false;
 				}
-				if(extIndex !== -1){
-					ext = str.substring(extIndex + 10, str.indexOf(')', extIndex)-1);
-				}
-				if(mixIndex !== -1){
-					mix = str.substring(mixIndex + 6, str.indexOf(')', mixIndex)-1);
-				}
-				if(implementsIndex !== -1){
-					impl = str.substring(implementsIndex + 13, str.indexOf(')', implementsIndex)-1);
-				}
-				classTextObj[pkg + '.' + clsName] = {
-					cls:str,
-					clsName:clsName,
-					ext:ext,
-					mix:mix,
-					impl:impl,
-					pkg:pkg,
-					type:type,
-					propsAndMethods:parsePropsAndMethods(str, type, clsName)
+				if (clsName && isValid) {
+					if (extIndex !== -1) {
+						ext = str.substring(extIndex + 10, str.indexOf(')', extIndex) - 1);
+					}
+					if (mixIndex !== -1) {
+						mix = str.substring(mixIndex + 6, str.indexOf(')', mixIndex) - 1);
+					}
+					if (implementsIndex !== -1) {
+						impl = str.substring(implementsIndex + 13, str.indexOf(')', implementsIndex) - 1);
+					}
+					classTextObj[pkg + '.' + clsName] = {
+						cls: str,
+						clsName: clsName,
+						ext: ext,
+						mix: mix,
+						impl: impl,
+						pkg: pkg,
+						nm: pkg + '.' + clsName,
+						type: type,
+						propsAndMethods: parsePropsAndMethods(str, type, clsName)
+					}
 				}
 			}
 		}
@@ -132,7 +141,6 @@ a5.Package('a5.apps.docsGenerator.helpers')
 						methodName = trim(line.substring(delimWord.length+1, line.indexOf('= function'))),
 						commentStart = -1,
 						commentsObj = null;
-					if(methodName == 'self.') debugger;
 					if(!methodName.match(/\w*/i))
 						break;
 					if(i > 0 && strArray[i-1].substr(0, 2) === '*/'){
@@ -143,11 +151,25 @@ a5.Package('a5.apps.docsGenerator.helpers')
 							}
 						}		
 					}
-					if (commentStart !== -1)
-						commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
-					retObj[methodName] = {
-						type: isMethod ? (methodName === clsName ? 'constructor' : 'method') : 'property',
-						details: commentsObj
+					if (methodName && methodName.indexOf('Override.') === -1) {
+						var isFinal = false,
+							isPrivate = false;
+						if(methodName.indexOf('Final.') === 0){
+							isFinal = true;
+							methodName = methodName.substr(6);
+						}
+						if(methodName.substr(0, 1) === '_')
+							isPrivate = true;
+						if (!isPrivate || includePrivate) {
+							if (commentStart !== -1) 
+								commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
+							retObj[methodName] = {
+								type: isMethod ? (methodName === clsName ? 'constructor' : 'method') : 'property',
+								isPrivate: isPrivate,
+								isFinal: isFinal,
+								details: commentsObj
+							}
+						}
 					}
 				}
 			}
