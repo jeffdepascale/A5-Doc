@@ -1,0 +1,30 @@
+
+<cl:ViewDef xmlns:cl='http://corelayerjs.com/'>
+	<cl:Imports>
+		<cl:Import ns='a5.cl.*' />
+		<cl:Import ns='a5.cl.ui.*' />
+		<cl:Import ns='a5.cl.ui.list.*' />
+	</cl:Imports>
+	
+	<cl:Defaults>
+		<cl:UIListItem collapsedSize='30'/>
+	</cl:Defaults>
+	
+	<cl:Definition>
+		
+		<cl:UIListView>
+				<% for (var prop in nmObj) {  %>
+					<cl:UIListItem label='<%=prop%>' data='<%=prop%>'>
+						<cl:UIListView handleSize='30'>
+							<% for (var subProp in nmObj[prop]) { %>
+								<cl:UIListItem label='<%=subProp%>' data='<%=nmObj[prop][subProp].nm.replace(/\./g, "_")%>' />
+							<% } %>	
+						</cl:UIListView>
+					</cl:UIListItem>
+				<% } %>
+		</cl:UIListView>
+		
+		
+		
+	</cl:Definition>
+</cl:ViewDef>

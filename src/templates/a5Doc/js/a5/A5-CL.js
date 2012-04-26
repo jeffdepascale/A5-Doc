@@ -275,7 +275,6 @@ a5.SetNamespace('a5.core.attributes', true, function(){
 						isAround = true;
 				if (ret !== null && ret !== undefined) {
 					switch(ret){
-						case a5.AspectAttribute.NOT_IMPLEMENTED:
 						case a5.Attribute.SUCCESS:
 							ret = args;
 							break;
@@ -4717,7 +4716,6 @@ a5.Package('a5.cl.core')
 						type = urlObj[1];
 					}
 				}
-				url = a5.cl.core.Utils.makeAbsolutePath(checkReplacements(url));
 				
 				function completeLoad(retValue){
 					a5._a5_createQueuedPrototypes();
@@ -4752,9 +4750,10 @@ a5.Package('a5.cl.core')
 						}
 					}
 				}
-				if (type) {
-					var cacheValue = checkCache(url);
-					if (!cacheValue) {
+				var cacheValue = checkCache(url);
+				if (!cacheValue) {
+					if (type) {
+						url = a5.cl.core.Utils.makeAbsolutePath(checkReplacements(url));
 						if (type === 'css') {
 							var cssError = function(){
 								if (onerror) onerror(url);
@@ -4832,13 +4831,13 @@ a5.Package('a5.cl.core')
 							requestManager.makeRequest(reqObj)
 						}
 					} else {
-						if(cacheValue === ResourceCache.BROWSER_CACHED_ENTRY)
+						throw 'Unknown include type for included file "' + url + '".';
+					}
+				} else {
+					if(cacheValue === ResourceCache.BROWSER_CACHED_ENTRY)
 							continueLoad(null);
 						else
 							continueLoad(cacheValue);
-					}
-				} else {
-					throw 'Unknown include type for included file "' + url + '".';
 				}			
 			}
 		}

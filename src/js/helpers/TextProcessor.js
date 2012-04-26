@@ -78,21 +78,22 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					staticIndex = str.indexOf('.Static('),
 					type,
 					clsName;
+					console.log(str);
 				if (clsIndex !== -1) {
 					clsName = str.substring(clsIndex + 8, str.indexOf(',', clsIndex)-1);
 					type = 'Class';
 				} else if(protoIndex !== -1){
 					clsName = str.substring(protoIndex + 12, str.indexOf(',', protoIndex)-1);
 					type = 'Prototype';
-				} else if(staticIndex !== -1){
-					clsName = str.substring(staticIndex + 9, str.indexOf(',', staticIndex)-1);
-					type = 'Static';
 				} else if(mixinIndex !== -1){
 					clsName = str.substring(mixinIndex + 8, str.indexOf(',', mixinIndex)-1);
 					type = 'Mixin';
 				} else if(interfaceIndex !== -1){
 					clsName = str.substring(interfaceIndex + 12, str.indexOf(',', interfaceIndex)-1);
 					type = 'Interface';
+				} else if(staticIndex !== -1){
+					clsName = str.substring(staticIndex + 9, str.indexOf(',', staticIndex)-1);
+					type = 'Class';
 				} else if(clsArray[i].substr(0, 2) !== '//' && 
 						  clsArray[i].substr(0, 2) !== '/*'){
 							if(errorOnInvalid)
@@ -126,48 +127,60 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var parsePropsAndMethods = function(str, type, clsName){
-			var delimIndex = str.indexOf('function(', str.indexOf('.' + type + ')')) + 9,
+			var delimIndex = str.indexOf('function(', str.indexOf('.' + type + '(')) + 9,
 				endDelim = str.indexOf(')', delimIndex),
 				delimWord = str.substring(delimIndex, endDelim),
 				clsStr = str.substr(endDelim),
-				retObj = {};
+				retObj = {Properties:null, Methods:null, Construct:null};
 			if(delimWord.indexOf(','))
 				delimWord = delimWord.split(',')[0];
 			var strArray = str.substr(endDelim).split('\n');
+			
 			for (var i = 0; i < strArray.length; i++) {
 				var line = strArray[i] = trim(strArray[i]);
 				if(line.substr(0, delimWord.length + 1) === delimWord + '.' && line.indexOf('=') !== -1) {
 					var isMethod = line.indexOf('function(') !== -1,
 						methodName = trim(line.substring(delimWord.length+1, line.indexOf('= function'))),
 						commentStart = -1,
-						commentsObj = null;
-					if(!methodName.match(/\w*/i))
-						break;
-					if(i > 0 && strArray[i-1].substr(0, 2) === '*/'){
-						for(var j = i-1; j>-1; j--){
-							if (strArray[j].substr(0, 3) === '/**') {
-								commentStart = j;
-								break;
+						commentsObj = {};
+					if (methodName.match(/\w*/i)) {
+						if (i > 0 && strArray[i - 1].substr(0, 2) === '*/') {
+							for (var j = i - 1; j > -1; j--) {
+								if (strArray[j].substr(0, 3) === '/**') {
+									commentStart = j;
+									break;
+								}
 							}
-						}		
-					}
-					if (methodName && methodName.indexOf('Override.') === -1) {
-						var isFinal = false,
-							isPrivate = false;
-						if(methodName.indexOf('Final.') === 0){
-							isFinal = true;
-							methodName = methodName.substr(6);
 						}
-						if(methodName.substr(0, 1) === '_')
-							isPrivate = true;
-						if (!isPrivate || includePrivate) {
-							if (commentStart !== -1) 
-								commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
-							retObj[methodName] = {
-								type: isMethod ? (methodName === clsName ? 'constructor' : 'method') : 'property',
-								isPrivate: isPrivate,
-								isFinal: isFinal,
-								details: commentsObj
+						if (methodName && methodName.indexOf('Override.') === -1) {
+							var isFinal = false, isPrivate = false;
+							if (methodName.indexOf('Final.') === 0) {
+								isFinal = true;
+								methodName = methodName.substr(6);
+							}
+							if (methodName.substr(0, 1) === '_') 
+								isPrivate = true;
+							if (!isPrivate || includePrivate) {
+								if (commentStart !== -1) 
+									commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
+								if (!commentsObj) 
+									commentsObj = {};
+								var typeStr = isMethod ? (methodName === clsName ? 'Constructor' : 'Methods') : 'Properties';
+								if (typeStr === 'construct') {
+									retObj.construct = {
+										details: commentsObj
+									};
+								}
+								else {
+									var obj = retObj[typeStr];
+									if (!obj) 
+										obj = retObj[typeStr] = {};
+									obj[methodName] = {
+										isPrivate: isPrivate,
+										isFinal: isFinal,
+										details: commentsObj
+									}
+								}
 							}
 						}
 					}

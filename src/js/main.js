@@ -16,7 +16,6 @@ a5.Package('a5.apps.docsGenerator')
 					'js/helpers/FileLoader.js',
 					'js/helpers/DocProcessor.js',
 					'js/helpers/TextProcessor.js',
-					'js/helpers/LiveCodeProcessor.js',
 					'js/helpers/Generator.js',
 					'js/controllers/MainController.js'
 				]

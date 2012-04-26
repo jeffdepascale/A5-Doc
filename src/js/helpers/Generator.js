@@ -16,7 +16,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				classListTmpl = str;
 			})
 			self.cl().include('templates/a5Doc/fileTmpl/class.xml', function(str){
-				classTmpl = str;
+				classTmpl = str.replace('{{CLASS_BREAK}}', '<!--CL: id=views/<%=cls.nm.replace(/\\./g, "_")%> type=xml  :CL-->');
 			})
 		}
 		
@@ -36,6 +36,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			console.log(nmObj)
 			var result = self.plugins().TemplateEngine().populateTemplate(classListTmpl, {nmObj:nmObj});
 			console.log(result);
+			var classResult = self.plugins().TemplateEngine().populateTemplate(classTmpl, {nmObj:nmObj});
+			console.log(classResult);
 		}
 	
 

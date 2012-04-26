@@ -1,0 +1,64 @@
+
+
+<% for (var prop in nmObj) {  %>
+	<% var item = nmObj[prop]; %>
+	<% for (var itemProp in item) {  %>
+		<% var cls = item[itemProp]; %>
+		
+		{{CLASS_BREAK}}
+		
+		<cl:ViewDef xmlns:cl='http://corelayerjs.com/'>
+			<cl:Imports>
+				<cl:Import ns='a5.cl.*' />
+				<cl:Import ns='a5.cl.ui.*' />
+				<cl:Import ns='a5.cl.ui.list.*' />
+			</cl:Imports>
+			
+			<cl:Defaults>
+				<cl:UITextField fontSize='12' y='10' width='100%'/>
+			</cl:Defaults>
+			
+			<cl:Definition>	
+				<cl:CLViewContainer relY='true' padding='20' height='auto'>
+					<cl:UITextField text='Package <%=cls.pkg%>'/>
+					<cl:UITextField text='Class <%=cls.clsName%>' fontSize='20' fontWeight='bold'/>
+					<cl:UITextField text='A5 Class type - <%=cls.type%>'/>
+					<% if(cls.ext != null){ %>
+						<cl:UITextField text='Extends <%=cls.ext%>'/>
+					<% } %>	
+					<% if(cls.impl != null){ %>
+						<cl:UITextField text='Implements <%=cls.impl%>'/>
+					<% } %>	
+					<% if(cls.mix != null){ %>
+						<cl:UITextField text='Mixes <%=cls.mix%>'/>
+					<% } %>	
+					<% if(cls.propsAndMethods.Constructor) {  %>
+						<cl:UITextField text='Constructor' fontSize='16' fontWeight='bold' y='20'/>
+					<% } %>	
+					<% if(cls.propsAndMethods.Properties) {  %>
+						<cl:UITextField text='Properties' fontSize='16' fontWeight='bold' y='20'/>
+						<% for (var clsProp in cls.propsAndMethods.Properties) {  %>
+							<% var clsPropObj = cls.propsAndMethods.Properties[clsProp]; %>
+							<cl:UITextField text=' <%=clsProp%>'/>
+						<% } %>	
+					<% } %>
+					<% if(cls.propsAndMethods.Methods) {  %>
+						<cl:UITextField text='Methods' fontSize='16' fontWeight='bold' y='20'/>
+						<% for (var clsProp in cls.propsAndMethods.Methods) {  %>
+							<% var clsPropObj = cls.propsAndMethods.Methods[clsProp]; %>
+							<cl:UITextField text='<%=clsProp%>' y='20'/>
+							<% if(clsPropObj.isFinal) {  %>
+								<cl:UITextField text='Final'/>
+							<% } %>	
+							<% if(clsPropObj.isPrivate) {  %>
+								<cl:UITextField text='Private'/>
+							<% } %>	
+						<% } %>	
+					<% } %>	
+				</cl:CLViewContainer>
+			</cl:Definition>
+		</cl:ViewDef>
+	
+	<% } %>	
+<% } %>	
+
