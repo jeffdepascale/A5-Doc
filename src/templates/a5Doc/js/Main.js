@@ -17,7 +17,11 @@ a5.Package('apps.docs')
 			cls.setPluginConfig('MVC', {
 				rootController:'Main'
 			})
-		}		
+		}
+		
+		cls.Override.pluginsLoaded = function(){
+			cls.setMappings({desc:':id', controller:'Main', action:'content'})
+		}
 })
 
 a5.cl.CreateApplication();

@@ -2529,8 +2529,7 @@ a5.Package('a5.cl')
 		
 		/**
 		 * @name cl
-		 * @return
-		 * @type a5.cl.MVC#
+		 * @return {a5.cl.CL}
 		 */
 		proto.cl = function(){
 			return a5.cl.instance();
