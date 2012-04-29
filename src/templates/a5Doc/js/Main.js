@@ -10,7 +10,7 @@ a5.Package('apps.docs')
 					'js/controllers/MainController.js',
 					'js/controllers/ContentController.js',
 					'js/controllers/ClassListController.js',
-					'views/class.xml'
+					'views/doc.xml'
 				]
 			});
 			

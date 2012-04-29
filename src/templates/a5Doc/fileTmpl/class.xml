@@ -1,5 +1,4 @@
 
-
 <% for (var prop in nmObj) {  %>
 	<% var item = nmObj[prop]; %>
 	<% for (var itemProp in item) {  %>

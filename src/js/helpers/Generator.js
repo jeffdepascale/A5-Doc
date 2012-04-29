@@ -21,10 +21,6 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		self.generateOutput = function(docsObj){
-			parseClassList(docsObj);
-		}
-		
-		var parseClassList = function(docsObj){
 			var clsArray = [],
 				nmObj = {};
 			for (var prop in docsObj) {
@@ -33,23 +29,12 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					nmObj[obj.pkg] = {};
 				nmObj[obj.pkg][obj.clsName] = docsObj[prop];
 			}
-			console.log(nmObj)
-			var result = self.plugins().TemplateEngine().populateTemplate(classListTmpl, {nmObj:nmObj});
-			console.log(result);
+			var classListResult = self.plugins().TemplateEngine().populateTemplate(classListTmpl, {nmObj:nmObj});
 			var classResult = self.plugins().TemplateEngine().populateTemplate(classTmpl, {nmObj:nmObj});
-			//console.log(classResult);
-			//window.open('data:text/plain;charset=utf-8,'+classResult);
-			var lb = a5.cl.ui.modals.UILightBox.show();
-			var view = self.create(a5.cl.CLHTMLView);
-			view.drawHTML(toEntities(classResult));
-			lb.contentView().addSubView(view);
-			lb.contentView().scrollYEnabled(true).height('100%');
-			lb.contentWidth('90%').contentHeight('90%');
+			return '<!--CL: id=views/ClassList.xml type=xml  :CL-->' + classListResult +  classResult;
 		}
 		
-		var toEntities = function(str){
-			return str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		}
+		
 	
 
 })

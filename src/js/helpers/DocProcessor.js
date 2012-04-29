@@ -9,6 +9,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		var fileLoader,
 			textProcessor,
 			generator,
+			fileGenerator,
 			packageInput,
 			clsInfoObj,
 			trim = a5.cl.core.Utils.trim;
@@ -22,6 +23,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			fileLoader.addEventListener(im.FileLoader.COMPLETE, eFilesCompleteHandler);
 			textProcessor = self.create(im.TextProcessor);
 			generator = self.create(im.Generator);
+			fileGenerator = self.create(im.FileGenerator);
 			var vc = self.create(a5.cl.CLViewContainer);
 			vc.relY(true);
 			vc.addSubView(fileLoader.view());
@@ -30,6 +32,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		
 		var eFilesCompleteHandler = function(e){
 			clsInfoObj = textProcessor.processFiles(e.data().files);
-			generator.generateOutput(clsInfoObj);
+			var output = generator.generateOutput(clsInfoObj);
+			fileGenerator.createDownloadFile(output, 'doc.xml');
 		}
 })

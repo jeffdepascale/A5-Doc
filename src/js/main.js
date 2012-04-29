@@ -10,6 +10,7 @@ a5.Package('a5.apps.docsGenerator')
 				dependencies:[
 					'js/a5/A5-CL-MVC.js',
 					'js/a5/A5-CL-UI.js',
+					'js/3rdparty/FileSaver.js',
 					'js/a5/plugins/FileAPI.js',
 					'js/a5/plugins/Zip.js',
 					'js/a5/plugins/TemplateEngine.js',
@@ -17,6 +18,7 @@ a5.Package('a5.apps.docsGenerator')
 					'js/helpers/DocProcessor.js',
 					'js/helpers/TextProcessor.js',
 					'js/helpers/Generator.js',
+					'js/helpers/FileGenerator.js',
 					'js/controllers/MainController.js'
 				]
 			});

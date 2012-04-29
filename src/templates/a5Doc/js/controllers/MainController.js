@@ -16,9 +16,9 @@ a5.Package('apps.docs.controllers')
 			if(clr)
 				clr.destroy();
 			clr = cls.create(im.ContentController, [id]);
-			cls.cl().include('views/'+ id, function(xml){
+			/*cls.cl().include('views/'+ id, function(xml){
 				console.log(xml.replace(/\>/g, '>\n'));
-			});
+			});*/
 			clr.render(function(){
 				cls.contentView().addSubView(clr.view());
 				cls.view().redraw();
