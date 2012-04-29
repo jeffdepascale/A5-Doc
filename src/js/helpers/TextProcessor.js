@@ -20,7 +20,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				var classArray = parseText(array[i]);
 				processClasses(classArray);
 			}
-			return classTextObj;
+			return organizeOutput();
 		}
 		
 		var parseText = function(parseString){
@@ -223,7 +223,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var parseComments = function(commentArray){
-			var params = {},
+			var params = null,
 				description = null,
 				returns = null,
 				foundFirstProp = false;
@@ -246,7 +246,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 									optional = true;
 									name = name.substring(1, name.length - 1);
 								}
-								
+								if(!params)
+									params = {};
 								params[name] = {
 									optional: optional,
 									type: toEntities(paramType),
@@ -339,5 +340,41 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					} while (parentCls);
 				}
 			}
+		}
+		
+		var organizeOutput = function(){
+			var nmObj = {},
+				retArray = [];
+			for (var prop in classTextObj) {
+				var obj = classTextObj[prop];
+				if (!nmObj[obj.pkg]) 
+					nmObj[obj.pkg] = {};
+				nmObj[obj.pkg][obj.clsName] = classTextObj[prop];
+			}
+			
+			//order namespaces
+			retArray = organizeObj(nmObj);
+			for (var i = 0, l = retArray.length; i < l; i++) {
+				//order packages internally
+				retArray[i].value = organizeObj(retArray[i].value);
+				//order classes internally
+				for(var j = 0, k = retArray[i].value.length; j<k; j++)
+					retArray[i].value[j].value = organizeClass(retArray[i].value[j].value);
+			}
+			return retArray;
+		}
+		
+		var organizeObj = function(obj){
+			var retArray = [];
+			for(var prop in obj)
+				retArray.push({name:prop, value:obj[prop]});
+			return retArray.sort(function(a,b){ return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+		}
+		
+		var organizeClass = function(cls){
+			var subOrganizeArray = ['Properties', 'InheritedMethods', 'InheritedProperties', 'PrivateMethods', 'Methods'];
+			for (var i = 0, l = subOrganizeArray.length; i<l; i++)
+				cls.propsAndMethods[subOrganizeArray[i]] = organizeObj(cls.propsAndMethods[subOrganizeArray[i]], subOrganizeArray[i]);
+			return cls; 
 		}
 })

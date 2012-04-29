@@ -20,17 +20,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			})
 		}
 		
-		self.generateOutput = function(docsObj){
-			var clsArray = [],
-				nmObj = {};
-			for (var prop in docsObj) {
-				var obj = docsObj[prop];
-				if(!nmObj[obj.pkg])
-					nmObj[obj.pkg] = {};
-				nmObj[obj.pkg][obj.clsName] = docsObj[prop];
-			}
-			var classListResult = self.plugins().TemplateEngine().populateTemplate(classListTmpl, {nmObj:nmObj});
-			var classResult = self.plugins().TemplateEngine().populateTemplate(classTmpl, {nmObj:nmObj});
+		self.generateOutput = function(docArray){
+			var classListResult = self.plugins().TemplateEngine().populateTemplate(classListTmpl, {docArray:docArray});
+			var classResult = self.plugins().TemplateEngine().populateTemplate(classTmpl, {docArray:docArray});
 			return '<!--CL: id=views/ClassList.xml type=xml  :CL-->' + classListResult +  classResult;
 		}
 		

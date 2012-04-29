@@ -31,8 +31,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var eFilesCompleteHandler = function(e){
-			clsInfoObj = textProcessor.processFiles(e.data().files);
-			var output = generator.generateOutput(clsInfoObj);
+			docArray = textProcessor.processFiles(e.data().files);
+			var output = generator.generateOutput(docArray);
 			fileGenerator.createDownloadFile(output, 'doc.xml');
 		}
 })
