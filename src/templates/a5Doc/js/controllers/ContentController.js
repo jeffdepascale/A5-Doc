@@ -18,7 +18,7 @@ a5.Package('apps.docs.controllers')
 		var eInhMethodsHandler = function(e){
 			cls.view().getChildView('inheritedMethods').show();
 			cls.view().getChildView('inheritedMethodsBtn').hide();
-				cls.MVC().application().view().redraw(true); 
+			cls.MVC().application().view().redraw(true); 
 		}
 		
 });

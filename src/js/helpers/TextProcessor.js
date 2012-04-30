@@ -8,7 +8,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			trim = a5.cl.core.Utils.trim,
 			includePrivate = false,
 			errorOnInvalid = false,
-			skipped = ['core'],
+			skippedPackages = /core/,
 			pkgBreakers = ['a5.Package(', 'Package('];
 		
 		self.TextProcessor = function(){
@@ -63,6 +63,10 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			return null;
 		}
 		
+		var parseMultiline = function(){
+			
+		}
+		
 		var processClasses = function(clsArray){
 			for(var i = 0, l = clsArray.length; i<l; i++){
 				var isValid = true,
@@ -72,6 +76,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					mix = null,
 					impl = null,
 					imprt = null,
+					stat = {},
 					extIndex = str.indexOf('.Extends('),
 					clsIndex = str.indexOf('.Class('),
 					mixIndex = str.indexOf('.Mix('),
@@ -81,6 +86,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					implementsIndex = str.indexOf('.Implements('),
 					protoIndex = str.indexOf('.Prototype('),
 					staticIndex = str.indexOf('.Static('),
+					isStaticDeclaration = false,
 					type,
 					clsName;
 				if (clsIndex !== -1) {
@@ -96,8 +102,12 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					clsName = str.substring(interfaceIndex + 12, str.indexOf(',', interfaceIndex)-1);
 					type = 'Interface';
 				} else if(staticIndex !== -1){
-					clsName = str.substring(staticIndex + 9, str.indexOf(',', staticIndex)-1);
-					type = 'Class';
+					if(str.substring(staticIndex, str.indexOf('{', staticIndex)).match(/,/)){
+						isStaticDeclaration = true;
+						clsName = str.substring(staticIndex + 9, str.indexOf(',', staticIndex)-1);
+						type = 'Class';
+					}				
+					
 				} else if(clsArray[i].substr(0, 2) !== '//' && 
 						  clsArray[i].substr(0, 2) !== '/*'){
 							if(errorOnInvalid)
@@ -111,41 +121,101 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					}
 					if (mixIndex !== -1) {
 						mix = str.substring(mixIndex + 6, str.indexOf(')', mixIndex) - 1);
+						//TODO: support multiple
+						if(mix.indexOf("'"))
+							mix = mix.split("'")[0];
 					}
 					if(importIndex !== -1){
 						imprt = str.substring(importIndex + 9, str.indexOf(')', importIndex) - 1);
 					}
 					if (implementsIndex !== -1) {
 						impl = str.substring(implementsIndex + 13, str.indexOf(')', implementsIndex) - 1);
+						//TODO: support multiple
+						if(impl.indexOf("'"))
+							impl = impl.split("'")[0];
 					}
-					if (!pkg.match(/core/)) {
+					if(staticIndex != -1 && !isStaticDeclaration){
+						var staticDefString = str.substring(str.indexOf('){', staticIndex), str.indexOf('})', staticIndex)),
+							delimWord = str.substring(str.indexOf('function(', staticIndex)+9, str.indexOf('){', staticIndex));
+						if(delimWord.indexOf(','))
+							delimWord = delimWord.split(',')[0];
+						stat = parsePropsAndMethods(staticDefString, clsName, pkg + '.' + clsName, delimWord);
+					}
+					if (!pkg.match(skippedPackages)) {
 						classTextObj[pkg + '.' + clsName] = {
 							cls: str,
 							clsName: clsName,
-							ext: ext || 'a5.Object',
+							ext: ext,
 							mix: mix,
 							imprt: imprt,
 							impl: impl,
 							pkg: pkg,
 							nm: pkg + '.' + clsName,
 							type: type,
-							propsAndMethods: parsePropsAndMethods(str, type, clsName, pkg + '.' + clsName)
+							propsAndMethods: parseInstancePropsAndMethods(str, type, clsName, pkg + '.' + clsName)
 						}
+						var setObj = classTextObj[pkg + '.' + clsName].propsAndMethods;
+						setObj.StaticMethods = stat.Methods || null;
+						setObj.StaticProperties = stat.Properties || null;
+						setObj.StaticPrivateMethods = stat.PrivateMethods || null;
+						setObj.StaticPrivateProperties = stat.PrivateProperties || null;
 					}
 				}
 			}
-			classTextObj['a5.Object'] = {
+			classTextObj['TopLevel.Object'] = {
 				cls:'',
 				clsName:'Object',
-				nm:'a5.Object',
-				pkg:'a5',
+				nm:'TopLevel.Object',
+				pkg:'TopLevel',
 				type:'Prototype',
 				propsAndMethods:{
-					Constructor:{
-						Object:{definedBy:'a5.Object', details:{},isFinal:false}
+					StaticMethods:{
+						classPackage:{details:{}},
+						className:{details:{}},
+						namespace:{details:{}},
+						imports:{details:{}},
+						doesImplement:{details:{}},
+						doesExtend:{details:{}},
+						doesMix:{details:{}},
+						getAttributes:{details:{}},
+						instance:{details:{}},
+						superclass:{details:{}},
+						instanceCount:{details:{}},
+						isInterface:{details:{}},
+						isFinal:{details:{}},
+						isSingleton:{details:{}},
+						isAbstract:{details:{}},
+						isPrototype:{details:{}}
 					},
 					Methods:{
-						superclass:{definedBy:'a5.Object', details:{},isFinal:false}
+						superclass:{details:{}},
+						getStatic:{details:{}},
+						autoRelease:{details:{}},
+						mixins:{details:{}},
+						mix:{details:{}},
+						getAttributes:{details:{}},
+						getAttributeValue:{details:{}},
+						getMethods:{details:{}},
+						getProperties:{details:{}},
+						classPackage:{details:{}},
+						className:{details:{}},
+						getClass:{details:{}},
+						namespace:{details:{}},
+						doesImplement:{details:{}},
+						doesExtend:{details:{}},
+						doesMix:{details:{}},
+						imports:{details:{}},
+						instanceCount:{details:{}},
+						isInterface:{details:{}},
+						isFinal:{details:{}},
+						isSingleton:{details:{}},
+						isAbstract:{details:{}},
+						isPrototype:{details:{}},
+						instanceUID:{details:{}},
+						destroy:{details:{}},
+						create:{details:{}},
+						throwError:{details:{}},
+						assert:{details:{}}
 					}
 				}
 			}
@@ -153,18 +223,22 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			determineInherited();
 		}
 		
-		var parsePropsAndMethods = function(str, type, clsName, nm){
+		var parseInstancePropsAndMethods = function(str, type, clsName, nm){
 			var delimIndex = str.indexOf('function(', str.indexOf('.' + type + '(')) + 9,
 				endDelim = str.indexOf(')', delimIndex),
 				delimWord = str.substring(delimIndex, endDelim),
-				clsStr = str.substr(endDelim),
-				retObj = {Properties:null, Methods:null, PrivateMethods:null, Construct:null};
+				clsStr = str.substr(endDelim);
 			if(delimWord.indexOf(','))
 				delimWord = delimWord.split(',')[0];
-			var strArray = str.substr(endDelim).split(/\n|\r|\) *\{/);
+			return parsePropsAndMethods(clsStr, clsName, nm, delimWord);
+		}
+		
+		var parsePropsAndMethods = function(str, clsName, nm, delimWord){
+			var strArray = str.split(/\n|\r|\) *\{|;/);
+			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Construct:null};
 			for (var i = 0; i < strArray.length; i++) {
-				var checkedDelimWord = delimWord;
 				var line = strArray[i] = trim(strArray[i]);
+				var checkedDelimWord = delimWord;
 				if(!(line.substr(0, checkedDelimWord.length + 1) === checkedDelimWord + '.'))
 					checkedDelimWord = 'this';
 				if(line.substr(0, checkedDelimWord.length + 1) === checkedDelimWord + '.' && line.indexOf('=') !== -1) {
@@ -200,10 +274,11 @@ a5.Package('a5.apps.docsGenerator.helpers')
 									retObj.construct = {
 										details: commentsObj
 									};
-								}
-								else {
+								} else {
 									if(typeStr === 'Methods' && isPrivate)
 										typeStr = 'PrivateMethods';
+									else if(typeStr === 'Properties' && isPrivate)
+										typeStr = 'PrivateProperties';
 									var obj = retObj[typeStr];
 									if (!obj) 
 										obj = retObj[typeStr] = {};
@@ -219,7 +294,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					}
 				}
 			}
-			return retObj;
+			return retObj;		
 		}
 		
 		var parseComments = function(commentArray){
@@ -288,7 +363,10 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var toEntities = function(str){
-			return str.replace(/'/g, '&apos;').replace(/"/g, '&quot;').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return str.replace(/'/g, '&apos;').replace(/"/g, '&quot;')
+					.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;').replace(/{/g, '&#123;')
+					.replace(/}/g, '&#125;');
 		}
 		
 		var determineFullPackages = function(){
@@ -365,14 +443,20 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var organizeObj = function(obj){
-			var retArray = [];
-			for(var prop in obj)
-				retArray.push({name:prop, value:obj[prop]});
-			return retArray.sort(function(a,b){ return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+			if(obj){
+				var retArray = [];
+				for(var prop in obj)
+					retArray.push({name:prop, value:obj[prop]});
+				return retArray.sort(function(a,b){ return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1; });
+			} else {
+				return null;
+			}
 		}
 		
 		var organizeClass = function(cls){
-			var subOrganizeArray = ['Properties', 'InheritedMethods', 'InheritedProperties', 'PrivateMethods', 'Methods'];
+			var subOrganizeArray = ['Properties', 'InheritedMethods', 'InheritedProperties', 
+									'PrivateMethods', 'Methods', 'StaticMethods', 'StaticProperties',
+									'StaticPrivateMethods', 'StaticPrivateProperties'];
 			for (var i = 0, l = subOrganizeArray.length; i<l; i++)
 				cls.propsAndMethods[subOrganizeArray[i]] = organizeObj(cls.propsAndMethods[subOrganizeArray[i]], subOrganizeArray[i]);
 			return cls; 

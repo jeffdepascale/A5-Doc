@@ -34,6 +34,8 @@ a5.Package('apps.docs.controllers')
 			cls.contentView().addEventListener(im.UIMouseEvent.CLICK, eClickHandler);
 			classListController.render(function(){
 				cls.menuView().addSubView(classListController.view());
+				//TODO: addrress redraw in list view
+				setTimeout(function(){ cls.MVC().application().view().redraw(true);}, 500); 
 				classListController.view().addEventListener(im.UIListEvent.ITEM_SELECTED, eItemSelectedHandler);
 			});
 		}
