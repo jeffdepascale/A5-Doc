@@ -9,6 +9,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			includePrivate = false,
 			errorOnInvalid = false,
 			skippedPackages = /core/,
+			lineSplitRegex = /\n|\r|\) *\{|\*|;/,
 			pkgBreakers = ['a5.Package(', 'Package('];
 		
 		self.TextProcessor = function(){
@@ -24,7 +25,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var parseText = function(parseString){
-			var resp = findFirstIdentifier(parseString, pkgBreakers, true),
+			var resp = splitClasses(parseString, pkgBreakers, true),
 				str = null,
 				isFirstPass = true,
 				ret = [];
@@ -36,7 +37,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 						ret.push(resp.pre);
 					str = resp.post;
 					isFirstPass = false;
-					resp = findFirstIdentifier(str, pkgBreakers);
+					resp = splitClasses(str, pkgBreakers);
 				}
 			}
 			if(str)
@@ -49,22 +50,23 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			}
 			return ret;
 		}
-		
-		var findFirstIdentifier = function(str, identifiers, isFirstPass){
+
+		var splitClasses = function(str, identifiers, isFirstPass){
+			var offset = 1;
 			str = trim(str);
+			if (str.indexOf('/*') == 0)
+				offset = str.indexOf('Package', str.indexOf('*/'));
 			for(var j = 0, k = identifiers.length; j<k; j++){
 				var id = identifiers[j],
-					index = str.indexOf(id, isFirstPass ? 0:1);
+					index = str.indexOf(id, isFirstPass ? 0:offset);
 				if(index !== -1 && (j == 0 || j==1 && str.charAt(index-1) !== '.')){
-					var split = str.split(id);
+					var commentCheck = trim(str.slice(0, index));
+					if (commentCheck.lastIndexOf('*/') == commentCheck.length - 2)
+						index = str.substr(0, index).lastIndexOf('/*');
 					return {pre:trim(str.slice(0, index)), post:trim(str.slice(index))}
 				}
 			}
 			return null;
-		}
-		
-		var parseMultiline = function(){
-			
 		}
 		
 		var processClasses = function(clsArray){
@@ -76,6 +78,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					mix = null,
 					impl = null,
 					imprt = null,
+					clsComments = null,
 					stat = {},
 					extIndex = str.indexOf('.Extends('),
 					clsIndex = str.indexOf('.Class('),
@@ -89,6 +92,11 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					isStaticDeclaration = false,
 					type,
 					clsName;
+				var commentIndex = str.indexOf('/**');
+				if(commentIndex !== -1 && commentIndex < str.indexOf('('))
+					clsComments = str.substring(commentIndex + 3, str.indexOf('*/')).split(lineSplitRegex);
+				if(clsComments)
+					clsComments = parseComments(clsComments, true);
 				if (clsIndex !== -1) {
 					clsName = str.substring(clsIndex + 8, str.indexOf(',', clsIndex)-1);
 					type = 'Class';
@@ -152,6 +160,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 							pkg: pkg,
 							nm: pkg + '.' + clsName,
 							type: type,
+							comments:clsComments,
 							propsAndMethods: parseInstancePropsAndMethods(str, type, clsName, pkg + '.' + clsName)
 						}
 						var setObj = classTextObj[pkg + '.' + clsName].propsAndMethods;
@@ -234,7 +243,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var parsePropsAndMethods = function(str, clsName, nm, delimWord){
-			var strArray = str.split(/\n|\r|\) *\{|;/);
+			var strArray = str.split(lineSplitRegex);
 			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Construct:null};
 			for (var i = 0; i < strArray.length; i++) {
 				var line = strArray[i] = trim(strArray[i]);
@@ -297,68 +306,79 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			return retObj;		
 		}
 		
-		var parseComments = function(commentArray){
+		var parseComments = function(commentArray, isClass){
 			var params = null,
 				description = null,
 				returns = null,
-				foundFirstProp = false;
+				foundFirstProp = false,
+				isClass = isClass == true? true:false;
 			for (var i = 0, l = commentArray.length; i<l; i++){
-				var line = trim(trim(commentArray[i]).substr(1));
-				if(line.charAt(0) === '@'){
-					foundFirstProp = true;
-					if (line.indexOf('param') === 1) {
-						var testStr = trim(line.substr(6)), firstSpaceIndex = testStr.indexOf(' '), paramType = testStr.substr(0, firstSpaceIndex), noDesc = false;
-						if (paramType.charAt(0) === '{' && paramType.charAt(paramType.length - 1) === '}') {
-							paramType = paramType.substring(1, paramType.length - 1);
-							var secondSpaceIndex = testStr.indexOf(' ', firstSpaceIndex + 1);
-							if (secondSpaceIndex === -1) {
-								secondSpaceIndex = testStr.length;
-								noDesc = true;
-							}
-							if (firstSpaceIndex !== secondSpaceIndex) {
-								var name = testStr.substring(firstSpaceIndex + 1, secondSpaceIndex), optional = false;
-								if (name.charAt(0) === '[' && name.charAt(name.length - 1) === ']') {
-									optional = true;
-									name = name.substring(1, name.length - 1);
+				var line = trim(commentArray[i]);
+				if (isClass && line.indexOf('@class') == 0)
+					line = line.substr(6);
+				if (line.length) {
+					if (line.charAt(0) === '@') {
+						foundFirstProp = true;
+						if(isClass){
+							
+						} else {
+							if (line.indexOf('param') === 1) {
+								var testStr = trim(line.substr(6)), firstSpaceIndex = testStr.indexOf(' '), paramType = testStr.substr(0, firstSpaceIndex), noDesc = false;
+								if (paramType.charAt(0) === '{' && paramType.charAt(paramType.length - 1) === '}') {
+									paramType = paramType.substring(1, paramType.length - 1);
+									var secondSpaceIndex = testStr.indexOf(' ', firstSpaceIndex + 1);
+									if (secondSpaceIndex === -1) {
+										secondSpaceIndex = testStr.length;
+										noDesc = true;
+									}
+									if (firstSpaceIndex !== secondSpaceIndex) {
+										var name = testStr.substring(firstSpaceIndex + 1, secondSpaceIndex), optional = false;
+										if (name.charAt(0) === '[' && name.charAt(name.length - 1) === ']') {
+											optional = true;
+											name = name.substring(1, name.length - 1);
+										}
+										if (!params) 
+											params = {};
+										params[name] = {
+											optional: optional,
+											type: toEntities(paramType),
+											description: noDesc ? null : toEntities(testStr.substr(secondSpaceIndex + 1))
+										}
+									}
 								}
-								if(!params)
-									params = {};
-								params[name] = {
-									optional: optional,
-									type: toEntities(paramType),
-									description: noDesc ? null : toEntities(testStr.substr(secondSpaceIndex + 1))
+							} else if (line.indexOf('return') === 1) {
+								var testStr = trim(line.substr(7)), spaceIndex = testStr.indexOf(' '), noDesc = false;
+								if (spaceIndex === -1) {
+									spaceIndex = testStr.length;
+									noDesc = true;
+								}
+								var paramType = null;
+								if (testStr.charAt(0) === '{' && testStr.indexOf('}') !== -1) 
+									paramType = testStr.substring(1, testStr.indexOf('}'));
+								if (paramType || !noDesc) {
+									returns = {
+										type: paramType,
+										description: noDesc ? null : toEntities(testStr.substr(spaceIndex + 1))
+									}
 								}
 							}
 						}
+					} else {
+						if (description === null) 
+							description = line;
+						else 
+							description += '\n' + line;
 					}
-					else 
-						if (line.indexOf('return') === 1) {
-							var testStr = trim(line.substr(7)), spaceIndex = testStr.indexOf(' '), noDesc = false;
-							if (spaceIndex === -1) {
-								spaceIndex = testStr.length;
-								noDesc = true;
-							}
-							var paramType = null;
-							if (testStr.charAt(0) === '{' && testStr.indexOf('}') !== -1)
-								paramType = testStr.substring(1, testStr.indexOf('}'));
-							if (paramType || !noDesc) {
-								returns = {
-									type: paramType,
-									description: noDesc ? null : toEntities(testStr.substr(spaceIndex + 1))
-								}
-							}
-						}
-				} else {
-					if(description === null)
-						description = line;
-					else
-						description += '\n' + line;
 				}
 			}
-			return {
-				params:params,
-				description:description ? toEntities(description):null,
-				returns:returns
+			if (isClass) {
+				return { description: description ? toEntities(description) : null };
+			} else {
+				return {
+					params: params,
+					description: description ? toEntities(description) : null,
+					returns: returns
+				}
 			}
 		}
 		
