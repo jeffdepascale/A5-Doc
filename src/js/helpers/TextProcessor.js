@@ -278,6 +278,19 @@ a5.Package('a5.apps.docsGenerator.helpers')
 									commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
 								if (!commentsObj) 
 									commentsObj = {};
+								var funcIndex = line.search(/function\(/);
+								if(funcIndex !== -1 && line.indexOf('(') !== line.length-1){
+									var spl = line.substring(line.indexOf('(')+1).split(',');
+									if(!commentsObj.params)
+										commentsObj.params = {};
+									for(var j = 0, k = spl.length; j<l; j++)
+										if(spl[j] && !commentsObj.params[spl[j]])
+											commentsObj.params[spl[j]] = {
+												optional:false,
+												type:'object',
+												description:null
+											}
+								}
 								var typeStr = isMethod ? (methodName === clsName ? 'Constructor' : 'Methods') : 'Properties';
 								if (typeStr === 'construct') {
 									retObj.construct = {
