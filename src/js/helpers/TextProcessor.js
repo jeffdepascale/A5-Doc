@@ -9,7 +9,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			includePrivate = false,
 			errorOnInvalid = false,
 			skippedPackages = /core/,
-			lineSplitRegex = /\n|\r|\) *\{|\*|;/,
+			lineSplitRegex = /\n|\r|\) *\{|;/,
 			pkgBreakers = ['a5.Package(', 'Package('];
 		
 		self.TextProcessor = function(){
@@ -94,8 +94,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					clsName;
 				var commentIndex = str.indexOf('/**');
 				if(commentIndex !== -1 && commentIndex < str.indexOf('('))
-					clsComments = str.substring(commentIndex + 3, str.indexOf('*/')).split(lineSplitRegex);
-				if(clsComments)
+					clsComments = str.substring(commentIndex + 3, str.indexOf('*/')).replace(/\* /g, '\n*').split(lineSplitRegex);
+				if (clsComments)
 					clsComments = parseComments(clsComments, true);
 				if (clsIndex !== -1) {
 					clsName = str.substring(clsIndex + 8, str.indexOf(',', clsIndex)-1);
@@ -243,6 +243,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		}
 		
 		var parsePropsAndMethods = function(str, clsName, nm, delimWord){
+			str = str.replace(/\* /g, '\n*');
 			var strArray = str.split(lineSplitRegex);
 			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Construct:null};
 			for (var i = 0; i < strArray.length; i++) {
@@ -257,9 +258,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 						commentStart = -1,
 						commentsObj = {};
 					if (methodName.match(/^[a-zA-Z0-9_]*$/)) {
-						if (i > 0 && strArray[i - 1].substr(0, 2) === '*/') {
+						if (i > 0 && trim(strArray[i - 1]).substr(0, 2) === '*/') {
 							for (var j = i - 1; j > -1; j--) {
-								if (strArray[j].substr(0, 3) === '/**') {
+								if (trim(strArray[j]).substr(0, 3) === '/**') {
 									commentStart = j;
 									break;
 								}
@@ -274,22 +275,23 @@ a5.Package('a5.apps.docsGenerator.helpers')
 							if (methodName.substr(0, 1) === '_') 
 								isPrivate = true;
 							if (!isPrivate || includePrivate) {
-								if (commentStart !== -1) 
+								if (commentStart !== -1)
 									commentsObj = parseComments(strArray.slice(commentStart + 1, i - 1));
-								if (!commentsObj) 
-									commentsObj = {};
 								var funcIndex = line.search(/function\(/);
 								if(funcIndex !== -1 && line.indexOf('(') !== line.length-1){
 									var spl = line.substring(line.indexOf('(')+1).split(',');
 									if(!commentsObj.params)
 										commentsObj.params = {};
-									for(var j = 0, k = spl.length; j<l; j++)
-										if(spl[j] && !commentsObj.params[spl[j]])
-											commentsObj.params[spl[j]] = {
-												optional:false,
-												type:'object',
-												description:null
+									for (var j = 0, k = spl.length; j < l; j++) {
+										var paramName = trim(spl[j]);
+										if (paramName && !commentsObj.params[paramName]) {
+											commentsObj.params[paramName] = {
+												optional: false,
+												type: 'object',
+												description: null
 											}
+										}
+									}
 								}
 								var typeStr = isMethod ? (methodName === clsName ? 'Constructor' : 'Methods') : 'Properties';
 								if (typeStr === 'construct') {
@@ -326,7 +328,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				foundFirstProp = false,
 				isClass = isClass == true? true:false;
 			for (var i = 0, l = commentArray.length; i<l; i++){
-				var line = trim(commentArray[i]);
+				var line = trim(trim(commentArray[i]).substr(1));
 				if (isClass && line.indexOf('@class') == 0)
 					line = line.substr(6);
 				if (line.length) {
@@ -385,11 +387,11 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				}
 			}
 			if (isClass) {
-				return { description: description ? toEntities(description) : null };
+				return { description: description ? toEntities(trim(description)) : null };
 			} else {
 				return {
 					params: params,
-					description: description ? toEntities(description) : null,
+					description: description ? toEntities(trim(description)) : null,
 					returns: returns
 				}
 			}
