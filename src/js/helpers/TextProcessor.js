@@ -75,10 +75,13 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					str = clsArray[i],
 					pkg = str.substring(str.indexOf('(') +2, str.indexOf(')')-1),
 					ext = null,
-					mix = null,
-					impl = null,
+					mix = [],
+					impl = [],
 					imprt = null,
 					clsComments = null,
+					isAbstract = false,
+					isFinal = false,
+					isSingleton = false,
 					stat = {},
 					extIndex = str.indexOf('.Extends('),
 					clsIndex = str.indexOf('.Class('),
@@ -90,6 +93,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					protoIndex = str.indexOf('.Prototype('),
 					staticIndex = str.indexOf('.Static('),
 					isStaticDeclaration = false,
+					typeDelim = null,
 					type,
 					clsName;
 				var commentIndex = str.indexOf('/**');
@@ -97,11 +101,16 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					clsComments = str.substring(commentIndex + 3, str.indexOf('*/')).replace(/\* /g, '\n*').split(lineSplitRegex);
 				if (clsComments)
 					clsComments = parseComments(clsComments, true);
+				else
+					clsComments = {description:null};
 				if (clsIndex !== -1) {
-					clsName = str.substring(clsIndex + 8, str.indexOf(',', clsIndex)-1);
+					typeDelim = str.indexOf(',', clsIndex);
+					clsName = str.substring(clsIndex + 8, typeDelim-1);
+					isFinal = true;
 					type = 'Class';
 				} else if(protoIndex !== -1){
-					clsName = str.substring(protoIndex + 12, str.indexOf(',', protoIndex)-1);
+					typeDelim = str.indexOf(',', protoIndex);
+					clsName = str.substring(protoIndex + 12, typeDelim-1);
 					type = 'Prototype';
 				} else if(mixinIndex !== -1){
 					clsName = str.substring(mixinIndex + 8, str.indexOf(',', mixinIndex)-1);
@@ -128,19 +137,15 @@ a5.Package('a5.apps.docsGenerator.helpers')
 						ext = str.substring(extIndex + 10, str.indexOf(')', extIndex) - 1);
 					}
 					if (mixIndex !== -1) {
-						mix = str.substring(mixIndex + 6, str.indexOf(')', mixIndex) - 1);
-						//TODO: support multiple
-						if(mix.indexOf("'"))
-							mix = mix.split("'")[0];
+						var mixStr = str.substring(mixIndex + 6, str.indexOf(')', mixIndex) - 1).replace(/\s|'|"/g, "");
+						mix = mixStr.split(",");
 					}
 					if(importIndex !== -1){
 						imprt = str.substring(importIndex + 9, str.indexOf(')', importIndex) - 1);
 					}
 					if (implementsIndex !== -1) {
-						impl = str.substring(implementsIndex + 13, str.indexOf(')', implementsIndex) - 1);
-						//TODO: support multiple
-						if(impl.indexOf("'"))
-							impl = impl.split("'")[0];
+						var implStr = str.substring(implementsIndex + 13, str.indexOf(')', implementsIndex) - 1).replace(/\s|'|"/g, "");
+						impl = implStr.split(',');
 					}
 					if(staticIndex != -1 && !isStaticDeclaration){
 						var staticDefString = str.substring(str.indexOf('){', staticIndex), str.indexOf('})', staticIndex)),
@@ -148,6 +153,20 @@ a5.Package('a5.apps.docsGenerator.helpers')
 						if(delimWord.indexOf(','))
 							delimWord = delimWord.split(',')[0];
 						stat = parsePropsAndMethods(staticDefString, clsName, pkg + '.' + clsName, delimWord);
+					}
+					if(typeDelim){
+						var typeStr = trim(trim(str.substring(typeDelim+1, str.indexOf('function(', typeDelim+1))).replace(/'/g, "").replace(/"/g, "").replace(/,/g, ""));
+						if(typeStr.length){
+							var split = typeStr.split(" ");
+							for(var j = 0, k = split.length; j<k; j++){
+								if(split[j] == 'abstract')
+									isAbstract = true;
+								if(split[j] == 'singleton')
+									isSingleton = true;
+								if(split[j] == 'final')
+									isFinal = true;
+							}
+						}
 					}
 					if (!pkg.match(skippedPackages)) {
 						classTextObj[pkg + '.' + clsName] = {
@@ -158,6 +177,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 							imprt: imprt,
 							impl: impl,
 							pkg: pkg,
+							isAbstract:isAbstract,
+							isSingleton:isSingleton,
+							isFinal:isFinal,
 							nm: pkg + '.' + clsName,
 							type: type,
 							comments:clsComments,
@@ -174,6 +196,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 			classTextObj['TopLevel.Object'] = {
 				cls:'',
 				clsName:'Object',
+				mix:[],
+				impl:[],
+				comments:{description:null},
 				nm:'TopLevel.Object',
 				pkg:'TopLevel',
 				type:'Prototype',
@@ -245,7 +270,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		var parsePropsAndMethods = function(str, clsName, nm, delimWord){
 			str = str.replace(/\* /g, '\n*');
 			var strArray = str.split(lineSplitRegex);
-			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Construct:null};
+			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Constructor:null};
 			for (var i = 0; i < strArray.length; i++) {
 				var line = strArray[i] = trim(strArray[i]);
 				var checkedDelimWord = delimWord;
@@ -294,8 +319,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 									}
 								}
 								var typeStr = isMethod ? (methodName === clsName ? 'Constructor' : 'Methods') : 'Properties';
-								if (typeStr === 'construct') {
-									retObj.construct = {
+								if (typeStr === 'Constructor') {
+									retObj.Constructor = {
+										name:clsName,
 										details: commentsObj
 									};
 								} else {
@@ -445,6 +471,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 					clz.propsAndMethods.InheritedMethods = {};
 					clz.propsAndMethods.InheritedProperties = {};
 					do{
+						if(parentCls.isSingleton)
+							clz.isSingleton = true;
 						for (var meth in parentCls.propsAndMethods.Methods)
 							clz.propsAndMethods.InheritedMethods[meth] = parentCls.propsAndMethods.Methods[meth];
 						for (var property in parentCls.propsAndMethods.Properties)

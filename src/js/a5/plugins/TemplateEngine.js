@@ -43,7 +43,7 @@ a5.Package('a5.cl.plugins.htmlTemplate')
 				str = str.replace(/\[SEMI_REPLACE\]/g, "'");
 				return str;
 			} catch (e) {
-				self.redirect(500,'Template engine error: ' + e);
+				self.MVC().redirect(500,'Template engine error: ' + e);
 			}
 		};
   

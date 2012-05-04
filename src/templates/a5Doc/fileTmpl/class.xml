@@ -22,18 +22,31 @@
 			<cl:Definition>	
 				<cl:CLViewContainer relY='true' padding='20' height='auto'>
 					<cl:UILink text='Package <%=cls.pkg%>'/>
-					<cl:UITextField text='Class <%=cls.clsName%>' fontSize='20' fontWeight='bold'/>
-					<cl:UITextField text='A5 Class type - <%=cls.type%>'/>
-					<% if(cls.ext != null) %>
+					<cl:UITextField text='<% if(cls.isFinal) { %>Final <% } %><% if(cls.isAbstract) { %>Abstract <% } %>Class <%=cls.clsName%>' fontSize='20' fontWeight='bold'/>
+					<% if(cls.isSingleton) { %>
+						<cl:UITextField fontSize='14' fontWeight='bold' text='Singleton' />	
+					<% } %>
+					<% if(cls.ext != null) { %>
 						<cl:UILink text='Extends <%=cls.ext%>'/>
-					<% if(cls.impl != null) %>
-						<cl:UILink text='Implements <%=cls.impl%>'/>
-					<% if(cls.mix != null) %>
-						<cl:UILink text='Mixes <%=cls.mix%>'/>
+					<% } %>
+					<% for(var j=0, k=cls.impl.length; j<k; j++) { %>
+						<cl:UILink text='Implements <%=cls.impl[j]%>'/>
+					<% } %>
+					<% for(var j=0, k=cls.mix.length; j<k; j++) { %>
+						<cl:UILink text='Mixes <%=cls.mix[j]%>'/>
+					<% } %>
+					<cl:UITextField y='10' text='{String}<%=cls.comments.description %>'/>
 					<% if(cls.propsAndMethods.Constructor) { %>
 						<cl:UITextField text='Constructor' fontSize='16' fontWeight='bold' y='20'/>
 						<cl:CLViewContainer border='2' relY='true' height='auto' padding='5'>
-								<cl:UITextField fontWeight='bold' text='<%=cls.clsName%>()'/>
+								<cl:UITextField fontWeight='bold' text='<%=cls.propsAndMethods.Constructor.name%>()'/>
+								<% var detailObj = cls.propsAndMethods.Constructor.details; %>
+								<% if(detailObj.params) { %>
+									<cl:UITextField text='Params:' fontWeight='bold' y='10'/>
+									<% for (var param in detailObj.params) { %>
+										<cl:UITextField y='5' text='<%=param%><% if (detailObj.params[param].type) { %>: <%=detailObj.params[param].type %><% } %><% if(detailObj.params[param].optional == true) { %>, Optional<% } %>. <%=detailObj.params[param].description %>'/>
+									<% } %>
+								<% } %>
 						</cl:CLViewContainer>
 					<% } %>
 					<% if(cls.propsAndMethods.StaticProperties) {  %>
