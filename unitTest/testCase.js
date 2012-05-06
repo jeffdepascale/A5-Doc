@@ -1582,6 +1582,12 @@ a5.SetNamespace('a5.core.errorHandling', true, function(){
 a5.ThrowError = a5.core.errorHandling.ThrowError;
 a5._a5_getThrownError = a5.core.errorHandling._a5_getThrownError;
 
+
+/**
+ * @package
+ * Package declaration
+ */
+
 a5.Package('a5')
 
 	.Prototype('Attribute', 'singleton', function(proto, im, Attribute){

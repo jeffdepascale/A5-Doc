@@ -18,6 +18,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		
 		self.processFiles = function(array){
 			for (var i = 0, l = array.length; i < l; i++) {
+				processPackages(array);
 				var classArray = parseText(array[i]);
 				processClasses(classArray);
 			}
@@ -67,6 +68,15 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				}
 			}
 			return null;
+		}
+		
+		var processPackages = function(classArray){
+			for(var i = 0, l = classArray.length; i<l; i++){
+				var index = classArray[i].search(/\* *@package/g);
+				if(index !== -1){
+					//process package declarations
+				}
+			}
 		}
 		
 		var processClasses = function(clsArray){
@@ -360,48 +370,61 @@ a5.Package('a5.apps.docsGenerator.helpers')
 				if (line.length) {
 					if (line.charAt(0) === '@') {
 						foundFirstProp = true;
+						var tag = line.match(/@[a-z]*/)[0];
+						if(tag)
+							tag = tag.substr(1);
 						if(isClass){
-							
+							switch (tag) {
+								case 'author':
+									
+									break;
+							}
 						} else {
-							if (line.indexOf('param') === 1) {
-								var testStr = trim(line.substr(6)), firstSpaceIndex = testStr.indexOf(' '), paramType = testStr.substr(0, firstSpaceIndex), noDesc = false;
-								if (paramType.charAt(0) === '{' && paramType.charAt(paramType.length - 1) === '}') {
-									paramType = paramType.substring(1, paramType.length - 1);
-									var secondSpaceIndex = testStr.indexOf(' ', firstSpaceIndex + 1);
-									if (secondSpaceIndex === -1) {
-										secondSpaceIndex = testStr.length;
+							switch(tag){
+								case 'param':
+									var testStr = trim(line.substr(6)), firstSpaceIndex = testStr.indexOf(' '), paramType = testStr.substr(0, firstSpaceIndex), noDesc = false;
+									if (paramType.charAt(0) === '{' && paramType.charAt(paramType.length - 1) === '}') {
+										paramType = paramType.substring(1, paramType.length - 1);
+										var secondSpaceIndex = testStr.indexOf(' ', firstSpaceIndex + 1);
+										if (secondSpaceIndex === -1) {
+											secondSpaceIndex = testStr.length;
+											noDesc = true;
+										}
+										if (firstSpaceIndex !== secondSpaceIndex) {
+											var name = testStr.substring(firstSpaceIndex + 1, secondSpaceIndex), optional = false;
+											if (name.charAt(0) === '[' && name.charAt(name.length - 1) === ']') {
+												optional = true;
+												name = name.substring(1, name.length - 1);
+											}
+											if (!params) 
+												params = {};
+											params[name] = {
+												optional: optional,
+												type: toEntities(paramType),
+												description: noDesc ? null : toEntities(testStr.substr(secondSpaceIndex + 1))
+											}
+										}
+									}
+									break;
+								case 'return':
+									var testStr = trim(line.substr(7)), spaceIndex = testStr.indexOf(' '), noDesc = false;
+									if (spaceIndex === -1) {
+										spaceIndex = testStr.length;
 										noDesc = true;
 									}
-									if (firstSpaceIndex !== secondSpaceIndex) {
-										var name = testStr.substring(firstSpaceIndex + 1, secondSpaceIndex), optional = false;
-										if (name.charAt(0) === '[' && name.charAt(name.length - 1) === ']') {
-											optional = true;
-											name = name.substring(1, name.length - 1);
-										}
-										if (!params) 
-											params = {};
-										params[name] = {
-											optional: optional,
-											type: toEntities(paramType),
-											description: noDesc ? null : toEntities(testStr.substr(secondSpaceIndex + 1))
+									var paramType = null;
+									if (testStr.charAt(0) === '{' && testStr.indexOf('}') !== -1) 
+										paramType = testStr.substring(1, testStr.indexOf('}'));
+									if (paramType || !noDesc) {
+										returns = {
+											type: paramType,
+											description: noDesc ? null : toEntities(testStr.substr(spaceIndex + 1))
 										}
 									}
-								}
-							} else if (line.indexOf('return') === 1) {
-								var testStr = trim(line.substr(7)), spaceIndex = testStr.indexOf(' '), noDesc = false;
-								if (spaceIndex === -1) {
-									spaceIndex = testStr.length;
-									noDesc = true;
-								}
-								var paramType = null;
-								if (testStr.charAt(0) === '{' && testStr.indexOf('}') !== -1) 
-									paramType = testStr.substring(1, testStr.indexOf('}'));
-								if (paramType || !noDesc) {
-									returns = {
-										type: paramType,
-										description: noDesc ? null : toEntities(testStr.substr(spaceIndex + 1))
-									}
-								}
+									break;
+								case 'see':
+								
+									break;
 							}
 						}
 					} else {
@@ -411,6 +434,9 @@ a5.Package('a5.apps.docsGenerator.helpers')
 							description += '\n' + line;
 					}
 				}
+			}
+			if(description && description.indexOf('{@link') !== -1){
+				//
 			}
 			if (isClass) {
 				return { description: description ? toEntities(trim(description)) : null };

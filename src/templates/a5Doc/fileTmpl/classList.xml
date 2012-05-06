@@ -15,16 +15,16 @@
 		<cl:UIListView>
 				<cl:UIListItem label='Top Level' data='TopLevel_Object'/>
 				<% for (var i = 0, l = docArray.length; i<l; i++) {  %>
-					<cl:UIListItem label='<%=docArray[i].name%>' data='<%=docArray[i].name%>'>
-						<cl:UIListView handleSize='30'>
-							<% for (var j = 0, k = docArray[i].value.length;j<k; j++) { %>
-								<% var classObj = docArray[i].value[j]; %>
-								<% if(!classObj.value.nm.match(/TopLevel/)) { %>
+					<% if(!docArray[i].name.match(/TopLevel/)) { %>
+						<cl:UIListItem label='<%=docArray[i].name%>' data='<%=docArray[i].name%>'>
+							<cl:UIListView handleSize='30'>
+								<% for (var j = 0, k = docArray[i].value.length;j<k; j++) { %>
+									<% var classObj = docArray[i].value[j]; %>
 									<cl:UIListItem label='<%=classObj.name%>' data='<%=classObj.value.nm.replace(/\./g, "_")%>' />
-								<% } %>
-							<% } %>	
-						</cl:UIListView>
-					</cl:UIListItem>
+								<% } %>	
+							</cl:UIListView>
+						</cl:UIListItem>
+					<% } %>
 				<% } %>
 		</cl:UIListView>
 		
