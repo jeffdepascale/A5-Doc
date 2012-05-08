@@ -39,8 +39,10 @@
 					<% if(cls.propsAndMethods.Constructor) { %>
 						<cl:UITextField text='Constructor' fontSize='16' fontWeight='bold' y='20'/>
 						<cl:CLViewContainer border='2' relY='true' height='auto' padding='5'>
-								<cl:UITextField fontWeight='bold' text='<%=cls.propsAndMethods.Constructor.name%>()'/>
 								<% var detailObj = cls.propsAndMethods.Constructor.details; %>
+								<% if(detailObj.description) { %>
+										<cl:UITextField y='5' text='<%=detailObj.description%>'/>
+									<% } %>
 								<% if(detailObj.params) { %>
 									<cl:UITextField text='Params:' fontWeight='bold' y='10'/>
 									<% for (var param in detailObj.params) { %>
@@ -56,7 +58,7 @@
 							<% var clsProp = cls.propsAndMethods.StaticProperties[j].name; %>
 							<% var clsPropObj = cls.propsAndMethods.StaticProperties[j].value; %>
 							<cl:CLViewContainer border='1' relY='true' height='auto' padding='5'>
-								<cl:UITextField fontWeight='bold' height='auto' text='<%=clsProp%><% if (clsPropObj.type) { %>: <%=clsPropObj.type %> <% } %> <%=clsPropObj.description %>'/>
+								<cl:UITextField fontWeight='bold' height='auto' text='<%=cls.clsName%>.<%=clsProp%><% if (clsPropObj.type) { %>: <%=clsPropObj.type %> <% } %> <%=clsPropObj.description %>'/>
 							</cl:CLViewContainer>
 						<% } %>	
 						</cl:CLViewContainer>

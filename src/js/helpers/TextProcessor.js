@@ -280,6 +280,12 @@ a5.Package('a5.apps.docsGenerator.helpers')
 		var parsePropsAndMethods = function(str, clsName, nm, delimWord){
 			str = str.replace(/\* /g, '\n*');
 			var strArray = str.split(lineSplitRegex);
+			for(var i = 0; i<strArray.length; i++){
+				if(trim(strArray[i]) == ""){
+					strArray.splice(i, 1);
+					i--;
+				}
+			}
 			var retObj = {Properties:null, Methods:null, PrivateMethods:null, Constructor:null};
 			for (var i = 0; i < strArray.length; i++) {
 				var line = strArray[i] = trim(strArray[i]);
@@ -317,7 +323,7 @@ a5.Package('a5.apps.docsGenerator.helpers')
 									var spl = line.substring(line.indexOf('(')+1).split(',');
 									if(!commentsObj.params)
 										commentsObj.params = {};
-									for (var j = 0, k = spl.length; j < l; j++) {
+									for (var j = 0, k = spl.length; j < k; j++) {
 										var paramName = trim(spl[j]);
 										if (paramName && !commentsObj.params[paramName]) {
 											commentsObj.params[paramName] = {
@@ -330,6 +336,8 @@ a5.Package('a5.apps.docsGenerator.helpers')
 								}
 								var typeStr = isMethod ? (methodName === clsName ? 'Constructor' : 'Methods') : 'Properties';
 								if (typeStr === 'Constructor') {
+									if(!commentsObj.description)
+										commentsObj.description = "Creates a new " + clsName + " instance.";
 									retObj.Constructor = {
 										name:clsName,
 										details: commentsObj
